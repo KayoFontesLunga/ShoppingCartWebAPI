@@ -1,0 +1,19 @@
+﻿# Arquivos temporários do Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Configurações sensíveis
+appsettings.json
+appsettings.Development.json
+
+# Pastas de compilação
+bin/
+obj/
+
+# Dependências
+*.dll
+*.exe
+*.pdb
