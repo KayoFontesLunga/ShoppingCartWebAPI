@@ -1,6 +1,5 @@
-@ShoppingCartWebAPI_HostAddress = http://localhost:5015
-
-GET {{ShoppingCartWebAPI_HostAddress}}/weatherforecast/
-Accept: application/json
+@ShoppingCartWebAPI_HostAddress = https://localhost:7073
 
 ###
+
+POST {{ShoppingCartWebAPI_HostAddress}}/Cart/Add?userName=Farid
