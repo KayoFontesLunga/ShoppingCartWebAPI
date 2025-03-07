@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 using System.Reflection.Metadata.Ecma335;
 
 namespace ShoppingCartWebAPI.Controllers
@@ -26,6 +27,45 @@ namespace ShoppingCartWebAPI.Controllers
             };
             await _dbHelper.ExecuteNonQueryAsync(query, parameters);
             return Ok($"{userName} added to cart");
+        }
+        [HttpPost]
+        [Route("AddItemToCart")]
+        public async Task<IActionResult> AddItemToCart([FromQuery] int cartId, int productId, int quantity)
+        {
+            var selectQuery = "SELECT Quantity FROM Cart_Has_Product WHERE CartId = @CartId AND ProductId = @ProductId";
+            SqlParameter[] selectParameters =
+            {
+                new SqlParameter("@CartId", cartId),
+                new SqlParameter("@ProductId", productId),
+            };
+
+            object result = await _dbHelper.ExecuteScalarAsync(selectQuery, selectParameters);
+            int existingQuantity = (result != null && result != DBNull.Value) ? Convert.ToInt32(result) : 0;
+
+            if (existingQuantity > 0)
+            {
+                string updateQuery = "UPDATE Cart_Has_Product SET Quantity = Quantity + @Quantity WHERE CartId = @CartId AND ProductId = @ProductId";
+                SqlParameter[] updateParameters =
+                {
+                   new SqlParameter("@CartId", cartId),
+                   new SqlParameter("@ProductId", productId),
+                   new SqlParameter("@Quantity", quantity)
+                };
+                await _dbHelper.ExecuteNonQueryAsync(updateQuery, updateParameters);
+                return Ok($"Item quantity updated: {existingQuantity} ➝ {existingQuantity + quantity}");
+            }
+            else
+            {
+                string query = "INSERT INTO Cart_Has_Product (CartId, ProductId, Quantity) VALUES (@CartId, @ProductId, @Quantity)";
+                SqlParameter[] parameters =
+                {
+                new SqlParameter("@CartId", cartId),
+                new SqlParameter("@ProductId", productId),
+                new SqlParameter("@Quantity", quantity > 0 ? quantity : 1)
+            };
+                await _dbHelper.ExecuteNonQueryAsync(query, parameters);
+                return Ok("New Item added to cart");
+            }
         }
     }
 }

@@ -13,6 +13,8 @@ namespace ShoppingCartWebAPI.Controllers
         {
             _dbHelper = dbHelper;
         }
+        [HttpPost]
+        [Route("Add")]
         public async Task<IActionResult> AddProduct([FromQuery] string productName, double price)
         {
             string query = "INSERT INTO Product (ProductName, Price) VALUES (@ProductName, @Price)";
@@ -22,7 +24,7 @@ namespace ShoppingCartWebAPI.Controllers
                 new SqlParameter("@Price", price)
             };
             await _dbHelper.ExecuteNonQueryAsync(query, parameters);
-            return Ok($"{productName} added to cart");
+            return Ok($"Product {productName} added successfully");
         }
     }
 }
