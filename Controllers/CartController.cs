@@ -11,7 +11,7 @@ namespace ShoppingCartWebAPI.Controllers
     public class CartController : ControllerBase
     {
         private readonly DataBaseHelper _dbHelper;
-        public CartController(DataBaseHelper dbHelper) 
+        public CartController(DataBaseHelper dbHelper)
         {
             _dbHelper = dbHelper;
         }
@@ -49,10 +49,10 @@ namespace ShoppingCartWebAPI.Controllers
                 {
                    new SqlParameter("@CartId", cartId),
                    new SqlParameter("@ProductId", productId),
-                   new SqlParameter("@Quantity", quantity)
+                   new SqlParameter("@Quantity", quantity + 1)
                 };
                 await _dbHelper.ExecuteNonQueryAsync(updateQuery, updateParameters);
-                return Ok($"Item quantity updated: {existingQuantity} ➝ {existingQuantity + quantity}");
+                return Ok($"Item quantity updated: {existingQuantity} ➝ {existingQuantity + 1}");
             }
             else
             {
@@ -69,4 +69,3 @@ namespace ShoppingCartWebAPI.Controllers
         }
     }
 }
-    
