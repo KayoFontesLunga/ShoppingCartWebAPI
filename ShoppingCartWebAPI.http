@@ -2,3 +2,9 @@
 
 ###
 POST {{ShoppingCartWebAPI_HostAddress}}/Cart/AddItemToCart?cartId=1&productId=3
+
+
+###
+
+
+DELETE {{ShoppingCartWebAPI_HostAddress}}/Cart/DeleteItemFromCart?cartId=1&productId=1

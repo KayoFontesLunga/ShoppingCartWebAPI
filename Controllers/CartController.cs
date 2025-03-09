@@ -67,5 +67,33 @@ namespace ShoppingCartWebAPI.Controllers
                 return Ok("New Item added to cart");
             }
         }
+        [HttpDelete]
+        [Route("DeleteItemFromCart")]
+        public async Task<IActionResult> DeleteItemFromCart([FromQuery] int cartId, int productId)
+        {
+            var selectQuery = "SELECT Quantity FROM Cart_Has_Product WHERE CartId = @CartId AND ProductId = @ProductId";
+            SqlParameter[] selectParameters =
+            {
+                new SqlParameter("@CartId", cartId),
+                new SqlParameter("@ProductId", productId),
+            };
+            object result = await _dbHelper.ExecuteNonQueryAsync(selectQuery, selectParameters);
+            int existingQuantity = (result != null && result != DBNull.Value) ? Convert.ToInt32(result) : 0;
+            if(existingQuantity > 0)
+            {
+                string query = "DELETE FROM Cart_Has_Product WHERE CartId = @CartId AND ProductId = @ProductId";
+                SqlParameter[] parameters =
+                {
+                new SqlParameter("@CartId", cartId),
+                new SqlParameter("@ProductId", productId),
+                };
+                await _dbHelper.ExecuteNonQueryAsync(query, parameters);
+                return Ok("Item deleted from cart");
+            }
+            else
+            {
+                return BadRequest("Item not found in cart");
+            }
+        }
     }
 }
