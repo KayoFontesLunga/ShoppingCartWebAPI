@@ -1,10 +1,14 @@
 @ShoppingCartWebAPI_HostAddress = https://localhost:7073
 
 ###
-POST {{ShoppingCartWebAPI_HostAddress}}/Cart/AddItemToCart?cartId=1&productId=10
+POST {{ShoppingCartWebAPI_HostAddress}}/Cart/AddItemToCart?cartId=1&productId=2
 
 
 ###
 
 
 DELETE {{ShoppingCartWebAPI_HostAddress}}/Cart/DeleteItemFromCart?cartId=1&productId=1
+
+###
+
+DELETE {{ShoppingCartWebAPI_HostAddress}}/Cart/ClearCart?cartId=1

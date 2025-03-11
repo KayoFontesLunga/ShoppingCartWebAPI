@@ -30,9 +30,9 @@ namespace ShoppingCartWebAPI.Controllers
                 await _dbHelper.ExecuteNonQueryAsync(query, parameters);
                 return Ok($"{userName} added to cart");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, "Internal server error: " + ex.Message);
+                return StatusCode(500, "Internal server error");
             }
         }
         [HttpPost]
@@ -94,13 +94,13 @@ namespace ShoppingCartWebAPI.Controllers
                     return Ok("New Item added to cart");
                 }
             }
-            catch(SqlException sqlEx)
+            catch(SqlException)
             {
                 return StatusCode(500, "Database error.");
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                return StatusCode(500, "Internal server error:");
+                return StatusCode(500, "Internal server error");
             }
         }
         [HttpDelete]
@@ -134,9 +134,47 @@ namespace ShoppingCartWebAPI.Controllers
                     return BadRequest("Item not found in cart");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, "Internal server error: " + ex.Message);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+        [HttpDelete]
+        [Route("ClearCart")]
+        public async Task<IActionResult> ClearCart([FromQuery] int cartId)
+        {
+            try
+            {
+                string selectQuery = "SELECT COUNT(*) FROM Cart_Has_Product WHERE CartId = @CartId";
+                SqlParameter[] sqlParameters =
+                {
+                    new SqlParameter("@CartId", cartId)
+                };
+                object result = await _dbHelper.ExecuteScalarAsync(selectQuery, sqlParameters);
+                int existingQuantity = (result != null && result != DBNull.Value) ? Convert.ToInt32(result) : 0;
+
+                if (existingQuantity > 0)
+                {
+                    string query = "DELETE FROM Cart_Has_Product WHERE CartId = @CartId";
+                    SqlParameter[] parameters =
+                    {
+                        new SqlParameter("@CartId", cartId)
+                    };
+                    await _dbHelper.ExecuteNonQueryAsync(query, parameters);
+                    return Ok("Cart cleared");
+                }
+                else
+                {
+                    return BadRequest("Cart is empty");
+                }
+            }
+            catch (SqlException)
+            {
+                return StatusCode(500, "Database error.");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Internal server error");
             }
         }
     }
