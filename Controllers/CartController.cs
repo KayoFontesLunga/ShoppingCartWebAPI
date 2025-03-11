@@ -41,6 +41,24 @@ namespace ShoppingCartWebAPI.Controllers
         {
             try
             {
+                string checkCartQuery = "SELECT COUNT(1) FROM Cart WHERE CartId = @CartId";
+                string checkProductQuery = "SELECT COUNT(1) FROM Product WHERE ProductId = @ProductId";
+
+                SqlParameter[] checkCartParameters = { new SqlParameter("@CartId", cartId) };
+                SqlParameter[] checkProductParameters = { new SqlParameter("@ProductId", productId) };
+                
+                object cartExists = await _dbHelper.ExecuteScalarAsync(checkCartQuery, checkCartParameters);
+                object productExists = await _dbHelper.ExecuteScalarAsync(checkProductQuery, checkProductParameters);
+
+                if (cartExists == null || cartExists == DBNull.Value || Convert.ToInt32(cartExists) == 0)
+                {
+                    return BadRequest("Cart not found");
+                }
+                if (productExists == null || productExists == DBNull.Value || Convert.ToInt32(productExists) == 0)
+                {
+                    return BadRequest("Product not found");
+                }
+
                 var selectQuery = "SELECT Quantity FROM Cart_Has_Product WHERE CartId = @CartId AND ProductId = @ProductId";
                 SqlParameter[] selectParameters =
                 {
@@ -76,9 +94,13 @@ namespace ShoppingCartWebAPI.Controllers
                     return Ok("New Item added to cart");
                 }
             }
+            catch(SqlException sqlEx)
+            {
+                return StatusCode(500, "Database error.");
+            }
             catch(Exception ex)
             {
-                return StatusCode(500, "Internal server error: " + ex.Message);
+                return StatusCode(500, "Internal server error:");
             }
         }
         [HttpDelete]
