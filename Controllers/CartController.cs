@@ -30,6 +30,10 @@ namespace ShoppingCartWebAPI.Controllers
                 await _dbHelper.ExecuteNonQueryAsync(query, parameters);
                 return Ok($"{userName} added to cart");
             }
+            catch(SqlException)
+            {
+                return StatusCode(500, "Database error");
+            }
             catch (Exception)
             {
                 return StatusCode(500, "Internal server error");
@@ -133,6 +137,10 @@ namespace ShoppingCartWebAPI.Controllers
                 {
                     return BadRequest("Item not found in cart");
                 }
+            }
+            catch (SqlException)
+            {
+                return StatusCode(500, "Database error");
             }
             catch (Exception)
             {
