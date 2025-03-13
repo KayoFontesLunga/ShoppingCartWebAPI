@@ -39,6 +39,7 @@ namespace ShoppingCartWebAPI.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        
         [HttpPost]
         [Route("AddItemToCart")]
         public async Task<IActionResult> AddItemToCart([FromQuery] int cartId, int productId, int quantity)
@@ -107,6 +108,7 @@ namespace ShoppingCartWebAPI.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        
         [HttpDelete]
         [Route("DeleteItemFromCart")]
         public async Task<IActionResult> DeleteItemFromCart([FromQuery] int cartId, int productId)
@@ -147,6 +149,7 @@ namespace ShoppingCartWebAPI.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        
         [HttpDelete]
         [Route("ClearCart")]
         public async Task<IActionResult> ClearCart([FromQuery] int cartId)
@@ -174,6 +177,67 @@ namespace ShoppingCartWebAPI.Controllers
                 else
                 {
                     return BadRequest("Cart is empty");
+                }
+            }
+            catch (SqlException)
+            {
+                return StatusCode(500, "Database error.");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Internal server error");
+            }
+        }
+        
+        [HttpPut]
+        [Route("AddCouponToCart")]
+        public async Task<IActionResult> AddCouponToCart([FromQuery] int cartId, int coupomId)
+        {
+            try
+            {
+                string selectQuery = "SELECT AvailableQuantity FROM Coupom WHERE CoupomId = @CoupomId";
+                SqlParameter[] sqlParameters =
+                {
+                    new SqlParameter("@CoupomId", coupomId)
+                };
+                object result = await _dbHelper.ExecuteScalarAsync(selectQuery, sqlParameters);
+                int availableQuantity = (result != null && result != DBNull.Value) ? Convert.ToInt32(result) : 0;
+
+                if (availableQuantity > 0)
+                {
+                    using (var transaction = await _dbHelper.BeginTransactionAsync())
+                    {
+                        try
+                        {
+                            string updateQuery = "UPDATE Coupom SET AvailableQuantity = @AvailableQuantity WHERE CoupomId = @CoupomId";
+                            SqlParameter[] sqlUpdateParameters =
+                            {
+                                new SqlParameter("@AvailableQuantity", availableQuantity - 1),
+                                new SqlParameter("@CoupomId", coupomId)
+                            };
+                            await _dbHelper.ExecuteNonQueryAsync(updateQuery, sqlUpdateParameters, transaction);
+
+                            string cartQuery = "UPDATE Cart SET CoupomId = @CoupomId WHERE CartId = @CartId";
+                            SqlParameter[] cartParameters =
+                            {
+                                new SqlParameter("@CoupomId", coupomId),
+                                new SqlParameter("@CartId", cartId)
+                            };
+                            await _dbHelper.ExecuteNonQueryAsync(cartQuery, cartParameters, transaction);
+
+                            await transaction.CommitAsync();
+                            return Ok("Coupom added to cart");
+                        }
+                        catch (Exception)
+                        {
+                            await transaction.RollbackAsync();
+                            return StatusCode(500, "Internal server error");
+                        }
+                    }
+                }
+                else
+                {
+                    return BadRequest("Coupom is not available");
                 }
             }
             catch (SqlException)

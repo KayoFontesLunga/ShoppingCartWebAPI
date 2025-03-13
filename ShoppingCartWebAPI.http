@@ -1,7 +1,7 @@
 @ShoppingCartWebAPI_HostAddress = https://localhost:7073
 
 ###
-POST {{ShoppingCartWebAPI_HostAddress}}/Cart/AddItemToCart?cartId=1&productId=2
+POST {{ShoppingCartWebAPI_HostAddress}}/Cart/AddItemToCart?cartId=1&productId=4
 
 
 ###
@@ -12,3 +12,11 @@ DELETE {{ShoppingCartWebAPI_HostAddress}}/Cart/DeleteItemFromCart?cartId=1&produ
 ###
 
 DELETE {{ShoppingCartWebAPI_HostAddress}}/Cart/ClearCart?cartId=1
+
+###
+
+PUT {{ShoppingCartWebAPI_HostAddress}}/Cart/AddCouponToCart?cartId=3&coupomId=1
+
+###
+
+POST {{ShoppingCartWebAPI_HostAddress}}/Cart/Add?userName=KAYO

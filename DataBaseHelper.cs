@@ -12,6 +12,15 @@ public class DataBaseHelper
         _connectionString = configuration.GetConnectionString("DataBase");
     }
 
+    // Inicia uma transação e retorna a transação para ser usada
+    public async Task<SqlTransaction> BeginTransactionAsync()
+    {
+        SqlConnection connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+        return await Task.FromResult(connection.BeginTransaction());
+    }
+
+    // Executa uma consulta e retorna um DataTable
     public async Task<DataTable> ExecuteQueryAsync(string query, SqlParameter[] parameters = null)
     {
         DataTable dataTable = new DataTable();
@@ -40,21 +49,35 @@ public class DataBaseHelper
         return dataTable;
     }
 
-    public async Task<int> ExecuteNonQueryAsync(string query, SqlParameter[] parameters = null)
+    // Executa um comando SQL sem retorno (INSERT, UPDATE, DELETE) com suporte a transações
+    public async Task<int> ExecuteNonQueryAsync(string query, SqlParameter[] parameters = null, SqlTransaction transaction = null)
     {
         try
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (SqlCommand command = new SqlCommand(query, transaction?.Connection ?? new SqlConnection(_connectionString)))
             {
-                await connection.OpenAsync();
-                using (SqlCommand command = new SqlCommand(query, connection))
+                if (transaction != null)
                 {
-                    if (parameters != null)
-                    {
-                        command.Parameters.AddRange(parameters);
-                    }
-                    return await command.ExecuteNonQueryAsync();
+                    command.Transaction = transaction;
                 }
+                else
+                {
+                    await command.Connection.OpenAsync();
+                }
+
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+
+                int result = await command.ExecuteNonQueryAsync();
+
+                if (transaction == null)
+                {
+                    await command.Connection.CloseAsync();
+                }
+
+                return result;
             }
         }
         catch (Exception ex)
@@ -64,19 +87,29 @@ public class DataBaseHelper
         }
     }
 
-    public async Task<SqlDataReader> ExecuteReaderAsync(string query, SqlParameter[] parameters = null)
+    // Executa uma consulta de leitura com suporte a transações
+    public async Task<SqlDataReader> ExecuteReaderAsync(string query, SqlParameter[] parameters = null, SqlTransaction transaction = null)
     {
-        SqlConnection connection = new SqlConnection(_connectionString);
+        SqlConnection connection = transaction?.Connection ?? new SqlConnection(_connectionString);
         try
         {
-            await connection.OpenAsync();
+            if (transaction == null)
+            {
+                await connection.OpenAsync();
+            }
+
             SqlCommand command = new SqlCommand(query, connection);
             if (parameters != null)
             {
                 command.Parameters.AddRange(parameters);
             }
+
+            if (transaction != null)
+            {
+                command.Transaction = transaction;
+            }
+
             return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
-            // CommandBehavior.CloseConnection fecha a conexão automaticamente quando o Reader for fechado
         }
         catch (Exception ex)
         {
@@ -86,22 +119,35 @@ public class DataBaseHelper
         }
     }
 
-    public async Task<int> ExecuteScalarAsync(string query, SqlParameter[] parameters = null)
+    // Executa um comando SQL que retorna um valor único (SELECT COUNT(*), etc.), com suporte a transações
+    public async Task<int> ExecuteScalarAsync(string query, SqlParameter[] parameters = null, SqlTransaction transaction = null)
     {
         try
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (SqlCommand command = new SqlCommand(query, transaction?.Connection ?? new SqlConnection(_connectionString)))
             {
-                await connection.OpenAsync();
-                using (SqlCommand command = new SqlCommand(query, connection))
+                if (transaction != null)
                 {
-                    if (parameters != null)
-                    {
-                        command.Parameters.AddRange(parameters);
-                    }
-                    object result = await command.ExecuteScalarAsync();
-                    return result != null ? Convert.ToInt32(result) : 0;
+                    command.Transaction = transaction;
                 }
+                else
+                {
+                    await command.Connection.OpenAsync();
+                }
+
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+
+                object result = await command.ExecuteScalarAsync();
+
+                if (transaction == null)
+                {
+                    await command.Connection.CloseAsync();
+                }
+
+                return result != null ? Convert.ToInt32(result) : 0;
             }
         }
         catch (Exception ex)
