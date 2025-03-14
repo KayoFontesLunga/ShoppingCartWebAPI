@@ -265,8 +265,8 @@ namespace ShoppingCartWebAPI.Controllers
                 
                 SqlParameter[] parameter =
                 {
-            new SqlParameter("@CartId", cartId)
-        };
+                    new SqlParameter("@CartId", cartId)
+                };
 
                 using (var reader = await _dbHelper.ExecuteReaderAsync(query, parameter))
                 {
