@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Data.SqlClient;
 using System.Data;
 
 namespace ShoppingCartWebAPI;
@@ -42,9 +43,9 @@ public class DataBaseHelper
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error in ExecuteQueryAsync: {ex.Message}");
+            Console.WriteLine("Error in ExecuteQueryAsync");
         }
         return dataTable;
     }
@@ -109,12 +110,15 @@ public class DataBaseHelper
                 command.Transaction = transaction;
             }
 
-            return await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+            var reader = await command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+            return reader;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error in ExecuteReaderAsync: {ex.Message}");
-            connection.Dispose(); // Fecha a conexão em caso de erro
+            if (transaction == null)
+            {
+                await connection.DisposeAsync();
+            }
             throw;
         }
     }

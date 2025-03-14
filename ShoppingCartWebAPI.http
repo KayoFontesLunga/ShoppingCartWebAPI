@@ -20,3 +20,7 @@ PUT {{ShoppingCartWebAPI_HostAddress}}/Cart/AddCouponToCart?cartId=3&coupomId=1
 ###
 
 POST {{ShoppingCartWebAPI_HostAddress}}/Cart/Add?userName=KAYO
+
+###
+
+GET {{ShoppingCartWebAPI_HostAddress}}/Cart/CompleteCart?cartId=1

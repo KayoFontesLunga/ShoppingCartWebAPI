@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
+using ShoppingCartWebAPI.Models;
 using System.Reflection.Metadata.Ecma335;
 
 namespace ShoppingCartWebAPI.Controllers
@@ -249,5 +250,72 @@ namespace ShoppingCartWebAPI.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        [HttpGet]
+        [Route("CompleteCart")]
+        public async Task<IActionResult> CompleteCart([FromQuery] int cartId)
+        {
+            try
+            {
+                string query = "SELECT c.CartId, c.UserName, c.CoupomId, p.ProductName, p.Price, cp.Quantity, co.DiscountPercentage " +
+                               "FROM Cart_Has_Product cp " +
+                               "INNER JOIN Cart c ON cp.CartId = c.CartId " +
+                               "INNER JOIN Product p ON cp.ProductId = p.ProductId " +
+                               "LEFT JOIN Coupom co ON c.CoupomId = co.CoupomId " +
+                               "WHERE c.CartId = @CartId";
+                
+                SqlParameter[] parameter =
+                {
+            new SqlParameter("@CartId", cartId)
+        };
+
+                using (var reader = await _dbHelper.ExecuteReaderAsync(query, parameter))
+                {
+                    if (!await reader.ReadAsync())
+                    {
+                        return NotFound("Cart not found");
+                    }
+
+                    var completeCart = new CompleteCart()
+                    {
+                        CartId = reader.GetInt32(0),
+                        UserName = reader.GetString(1),
+                        Coupom = new Coupom()
+                        {
+                            DiscountPercentage = reader.IsDBNull(6) ? 0 : reader.GetInt32(6)
+                        },
+                        Products = new List<Product>()
+                    };
+
+                    do
+                    {
+                        string productName = reader.GetString(3);
+                        double price = (double)reader.GetDecimal(4);
+                        int quantity = reader.GetInt32(5);
+
+                        var product = new Product()
+                        {
+                            ProductName = productName,
+                            Price = price,
+                            Quantity = quantity
+                        };
+                        completeCart.Products.Add(product);
+
+                    } while (await reader.ReadAsync());
+
+                    completeCart.Subtotal = completeCart.Products.Sum(p => p.Price * p.Quantity);
+                    completeCart.Total = completeCart.Subtotal - ((completeCart.Subtotal * completeCart.Coupom.DiscountPercentage) / 100);
+                    return Ok(completeCart);
+                }
+            }
+            catch (SqlException)
+            {
+                return StatusCode(500, "Database error.");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Internal server error.");
+            }
+        }
+
     }
 }
